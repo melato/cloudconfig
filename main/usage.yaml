@@ -1,0 +1,12 @@
+short: runs cloudinit configurations on the local system
+long: |
+  Intended to be used for testing cloud-init files.
+examples:
+- version
+- -f config.yaml -o alpine run 
+commands:
+  version:
+    short: print version
+  run:
+    short: run the cloudinit configuration on the local system
+
