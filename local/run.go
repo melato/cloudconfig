@@ -139,7 +139,7 @@ func (t *Runner) InstallPackages(packages []string) error {
 		return nil
 	}
 	if t.OS == nil {
-		return fmt.Errorf("cannot install packages.  Missing OS")
+		return requireOSError("cannot install packages")
 	}
 	commands := make([]cloudinit.Command, 0, len(packages))
 	for _, pkg := range packages {
@@ -148,12 +148,16 @@ func (t *Runner) InstallPackages(packages []string) error {
 	return t.RunCommands(commands)
 }
 
+func requireOSError(msg string) error {
+	return fmt.Errorf("%s.  Missing OS", msg)
+}
+
 func (t *Runner) AddUsers(users []*cloudinit.User) error {
 	if len(users) == 0 {
 		return nil
 	}
 	if t.OS == nil {
-		return fmt.Errorf("cannot create users.  Missing OS")
+		return requireOSError("cannot create users")
 	}
 	commands := make([]cloudinit.Command, 0, len(users))
 	for _, u := range users {
@@ -218,6 +222,16 @@ func (t *Runner) Run(c *cloudinit.Config) error {
 	err = t.AddUsers(c.Users)
 	if err != nil {
 		return err
+	}
+	if c.Timezone != "" {
+		if t.OS == nil {
+			return requireOSError("cannot set timezone")
+		}
+		command := t.OS.SetTimezoneCommand(c.Timezone)
+		err := t.RunCommands([]cloudinit.Command{cloudinit.Command(command)})
+		if err != nil {
+			return err
+		}
 	}
 	err = t.RunCommands(c.Runcmd)
 	if err != nil {

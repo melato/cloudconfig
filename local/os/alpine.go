@@ -37,3 +37,7 @@ func (t *Alpine) AddUserCommand(u *cloudinit.User) []string {
 	args = append(args, u.Name)
 	return args
 }
+
+func (t *Alpine) SetTimezoneCommand(timezone string) []string {
+	return []string{"setup-timezone", "-z", timezone}
+}

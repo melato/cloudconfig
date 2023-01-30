@@ -34,3 +34,7 @@ func (t *Debian) AddUserCommand(u *cloudinit.User) []string {
 	}
 	return args
 }
+
+func (t *Debian) SetTimezoneCommand(timezone string) []string {
+	return []string{"timedatectl", "set-timezone", timezone}
+}

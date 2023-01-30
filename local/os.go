@@ -22,4 +22,6 @@ type OS interface {
 	// so we need to keep the user unlocked and assign them an impossible
 	// password in order to enable passwordless ssh login
 	NeedUserPasswords() bool
+
+	SetTimezoneCommand(timezone string) []string
 }
