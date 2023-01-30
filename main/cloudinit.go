@@ -55,7 +55,7 @@ func (t *App) Run() error {
 func main() {
 	cmd := &command.SimpleCommand{}
 	var app App
-	cmd.Flags(&app).Command("run").RunFunc(app.Run)
+	cmd.Command("run").Flags(&app).RunFunc(app.Run)
 	cmd.Command("version").RunFunc(func() { fmt.Println(version) })
 
 	usage.Apply(cmd, usageData)

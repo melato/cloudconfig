@@ -21,6 +21,7 @@ func (t *Runner) runCommandExec(args []string) error {
 		return fmt.Errorf("command has 0 args")
 	}
 	cmd := exec.Command(args[0], args[1:]...)
+	fmt.Printf("%s\n", cmd.String())
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -36,14 +37,15 @@ func (t *Runner) runCommandSh(script string) error {
 }
 
 func (t *Runner) runCommand(command cloudinit.Command) error {
-	switch c := command.(type) {
-	case string:
-		return t.runCommandSh(c)
-	case []string:
-		return t.runCommandExec(c)
-	default:
-		return fmt.Errorf("invalid command type: %T", command)
+	script, isScript := cloudinit.Script(command)
+	if isScript {
+		return t.runCommandSh(script)
 	}
+	args, isArgs := cloudinit.Args(command)
+	if isArgs {
+		return t.runCommandExec(args)
+	}
+	return fmt.Errorf("invalid command type: %T", command)
 }
 
 func (t *Runner) RunCommands(commands []cloudinit.Command) error {

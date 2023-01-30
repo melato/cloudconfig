@@ -36,3 +36,22 @@ func TestConfigMerge2(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestConfigCommandScript(t *testing.T) {
+	c := Command("echo")
+	s, isScript := Script(c)
+	if !isScript || s != "echo" {
+		t.Fail()
+	}
+	c = Command([]string{"echo", "a"})
+	args, isArgs := Args(c)
+	if !isArgs || !stringSliceEquals([]string{"echo", "a"}, args) {
+		t.Fail()
+	}
+
+	c = Command([]any{"echo", 1})
+	args, isArgs = Args(c)
+	if !isArgs || !stringSliceEquals([]string{"echo", "1"}, args) {
+		t.Fail()
+	}
+}

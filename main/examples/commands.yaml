@@ -1,0 +1,4 @@
+runcmd:
+- mkdir -p /tmp/commands
+- date > /tmp/commands/date
+- [ touch, /tmp/commands/empty ]

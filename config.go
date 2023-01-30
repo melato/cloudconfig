@@ -1,6 +1,8 @@
 package cloudinit
 
 import (
+	"fmt"
+
 	"melato.org/cloudinit/internal"
 )
 
@@ -9,15 +11,17 @@ type Config struct {
 	Bootcmd  []Command `yaml:"bootcmd,omitempty"`
 	Packages []string  `yaml:"packages,omitempty"`
 	Files    []*File   `yaml:"write_files,omitempty"`
-	// Runcmd a slice whose elements are string or []string
 	Users    []*User   `yaml:"users,omitempty"`
 	Timezone string    `yaml:"timezone,omitempty"`
-	Runcmd   []Command `yaml:"runcmd,omitempty"`
+
+	// Runcmd is a list of commands to run
+	Runcmd []Command `yaml:"runcmd,omitempty"`
 }
 
-// Command is either a []string or a string
+// Command is string, or []string or []any
 // If it is a []string, it is executed using the equivalent of
 // execve(3) (with the first arg as the command)
+// If it is a []any, it is converted to []string and used as above.
 // If it is a string, it is passed as input to /bin/sh
 type Command any
 
@@ -75,4 +79,31 @@ func (c *Config) Merge(b *Config) {
 		c.Timezone = b.Timezone
 	}
 	c.Runcmd = append(c.Runcmd, b.Runcmd...)
+}
+
+// Script returns the command script content, if the command is a string.
+func Script(command Command) (string, bool) {
+	s, isString := command.(string)
+	return s, isString
+}
+
+// Args returns the command args, if the command is a slice.
+func Args(command Command) ([]string, bool) {
+	switch list := command.(type) {
+	case []string:
+		return list, true
+	case []any:
+		args := make([]string, len(list))
+		for i, arg := range list {
+			switch v := arg.(type) {
+			case string:
+				args[i] = v
+			default:
+				args[i] = fmt.Sprintf("%v", arg)
+			}
+		}
+		return args, true
+	default:
+		return nil, false
+	}
 }
