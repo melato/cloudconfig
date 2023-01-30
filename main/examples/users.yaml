@@ -1,0 +1,9 @@
+users:
+  - name: foobar
+    gecos: Foo B. Bar
+    groups: users
+  - name: barfoo
+    gecos: Bar B. Foo
+    sudo: true
+    ssh_authorized_keys:
+      - ssh-rsa A foo@bar

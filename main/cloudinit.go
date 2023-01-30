@@ -18,14 +18,14 @@ var version string
 //go:embed usage.yaml
 var usageData []byte
 
-type App struct {
+type Run struct {
 	ConfigFile string `name:"f" usage:"cloud-config yaml file"`
 	OS         string
 	config     *cloudinit.Config
 	os         local.OS
 }
 
-func (t *App) Configured() error {
+func (t *Run) Configured() error {
 	if t.ConfigFile == "" {
 		return fmt.Errorf("missing config file")
 	}
@@ -47,15 +47,34 @@ func (t *App) Configured() error {
 	return nil
 }
 
-func (t *App) Run() error {
+func (t *Run) Run() error {
 	runner := &local.Runner{OS: t.os}
 	return runner.Run(t.config)
 }
 
+func (t *Run) Print() error {
+	return yaml.Print(t.config)
+}
+
+func Parse(files []string) error {
+	for _, file := range files {
+		var config *cloudinit.Config
+		err := yaml.ReadFile(file, &config)
+		if err != nil {
+			fmt.Printf("%s ERROR\n", file)
+			return err
+		}
+		fmt.Printf("%s OK\n", file)
+	}
+	return nil
+}
+
 func main() {
 	cmd := &command.SimpleCommand{}
-	var app App
+	var app Run
 	cmd.Command("run").Flags(&app).RunFunc(app.Run)
+	cmd.Command("print").Flags(&app).RunFunc(app.Print)
+	cmd.Command("parse").RunFunc(Parse)
 	cmd.Command("version").RunFunc(func() { fmt.Println(version) })
 
 	usage.Apply(cmd, usageData)
