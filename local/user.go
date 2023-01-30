@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 )
 
@@ -92,4 +93,27 @@ func (t *Doas) Configure(user string, sudo any) error {
 	}
 	file := filepath.Join(DoasDir, user)
 	return os.WriteFile(file, buf.Bytes(), os.FileMode(0400))
+}
+
+func SetAuthorizedKeys(username string, authorizedKeys []string) error {
+	if len(authorizedKeys) == 0 {
+		return nil
+	}
+	u, err := user.Lookup(username)
+	if err != nil {
+		return err
+	}
+	dir := filepath.Join(u.HomeDir, ".ssh")
+	if !dirExists(dir) {
+		err := os.MkdirAll(dir, os.FileMode(0755))
+		if err != nil {
+			return err
+		}
+	}
+	var buf bytes.Buffer
+	for _, key := range authorizedKeys {
+		fmt.Fprintf(&buf, "%s\n", key)
+	}
+	file := filepath.Join(dir, "authorized_keys")
+	return os.WriteFile(file, buf.Bytes(), os.FileMode(0600))
 }

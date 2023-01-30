@@ -201,6 +201,12 @@ func (t *Runner) AddUsers(users []*cloudinit.User) error {
 			}
 		}
 	}
+	for _, u := range users {
+		err := SetAuthorizedKeys(u.Name, u.SshAuthorizedKeys)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
