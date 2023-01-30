@@ -31,6 +31,9 @@ func (t *Alpine) AddUserCommand(u *cloudinit.User) []string {
 	} else if u.Homedir != "" {
 		args = append(args, "-h", u.Homedir)
 	}
+	if u.PrimaryGroup != "" {
+		args = append(args, "-G", u.PrimaryGroup)
+	}
 	args = append(args, u.Name)
 	return args
 }

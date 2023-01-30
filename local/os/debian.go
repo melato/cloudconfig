@@ -29,5 +29,8 @@ func (t *Debian) AddUserCommand(u *cloudinit.User) []string {
 	} else if u.Homedir != "" {
 		args = append(args, "--home", u.Homedir)
 	}
+	if u.PrimaryGroup != "" {
+		args = append(args, "--group", u.PrimaryGroup)
+	}
 	return args
 }

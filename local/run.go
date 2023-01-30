@@ -159,6 +159,15 @@ func (t *Runner) AddUsers(users []*cloudinit.User) error {
 	for _, user := range users {
 		commands = append(commands, t.OS.AddUserCommand(user))
 	}
+	for _, user := range users {
+		groups := strings.Split(user.Groups, ",")
+		for _, group := range groups {
+			group = strings.TrimSpace(group)
+			if group != "" {
+				commands = append(commands, []string{"adduser", user.Name, group})
+			}
+		}
+	}
 	return t.RunCommands(commands)
 }
 

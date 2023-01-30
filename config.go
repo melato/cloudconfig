@@ -38,6 +38,7 @@ type User struct {
 	Shell             string   `yaml:"shell,omitempty"`
 	Homedir           string   `yaml:"homedir,omitempty"`
 	NoCreateHome      bool     `yaml:"no_create_home,omitempty"`
+	PrimaryGroup      string   `yaml:"primary_group,omitempty"`
 	Groups            string   `yaml:"groups,omitempty"`
 	Gecos             string   `yaml:"gecos,omitempty"`
 	SshAuthorizedKeys []string `yaml:"ssh_authorized_keys,omitempty"`
