@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -55,6 +56,42 @@ func (t *Runner) RunCommands(commands []cloudinit.Command) error {
 	return nil
 }
 
+// may return user.UnknownUserError, user.UnknownGroupError, or other error.
+func (t *Runner) findUidGid(owner string) (uid int, gid int, err error) {
+	parts := strings.Split(owner, ":")
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("invalid owner (user:group): %s", owner)
+	}
+	var userid = parts[0]
+	var groupid = parts[1]
+
+	parse := func(userid, groupid string) (uid int, gid int, err error) {
+		// if user, group are numeric, don't look them up
+		uid, err = strconv.Atoi(userid)
+		if err == nil {
+			gid, err = strconv.Atoi(groupid)
+		}
+		return uid, gid, err
+	}
+
+	uid, gid, err = parse(userid, groupid)
+	if err != nil {
+		return uid, gid, err
+	}
+
+	// lookup uid, gid
+	var u *user.User
+	var g *user.Group
+	u, err = user.Lookup(userid)
+	if err == nil {
+		g, err = user.LookupGroup(groupid)
+	}
+	if err != nil {
+		return 0, 0, err
+	}
+	return parse(u.Uid, g.Gid)
+}
+
 func (t *Runner) WriteFile(file *cloudinit.File) error {
 	dir := filepath.Dir(file.Path)
 	if dir == "." {
@@ -82,7 +119,12 @@ func (t *Runner) WriteFile(file *cloudinit.File) error {
 	}
 
 	if file.Owner != "" {
-		err = exec.Command("chown", file.Owner, path).Run()
+		uid, gid, err := t.findUidGid(file.Owner)
+		if err == nil {
+			err = os.Chown(path, uid, gid)
+		} else {
+			err = exec.Command("chown", file.Owner, path).Run()
+		}
 		if err != nil {
 			return err
 		}
