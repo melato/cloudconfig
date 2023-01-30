@@ -107,7 +107,7 @@ func (t *Runner) WriteFile(file *cloudinit.File) error {
 	path := filepath.Clean(file.Path)
 	var mode uint64
 	if file.Permissions == "" {
-		mode = 0o664
+		mode = 0664
 	} else {
 		mode, err = strconv.ParseUint(file.Permissions, 8, 32)
 		if err != nil {
@@ -156,19 +156,48 @@ func (t *Runner) AddUsers(users []*cloudinit.User) error {
 		return fmt.Errorf("cannot create users.  Missing OS")
 	}
 	commands := make([]cloudinit.Command, 0, len(users))
-	for _, user := range users {
-		commands = append(commands, t.OS.AddUserCommand(user))
-	}
-	for _, user := range users {
-		groups := strings.Split(user.Groups, ",")
+	for _, u := range users {
+		_, err := user.Lookup(u.Name)
+		if err == nil {
+			continue
+		}
+		switch err.(type) {
+		case user.UnknownUserError:
+			commands = append(commands, t.OS.AddUserCommand(u))
+		default:
+			return err
+		}
+		groups := strings.Split(u.Groups, ",")
 		for _, group := range groups {
 			group = strings.TrimSpace(group)
 			if group != "" {
-				commands = append(commands, []string{"adduser", user.Name, group})
+				commands = append(commands, []string{"adduser", u.Name, group})
 			}
 		}
 	}
-	return t.RunCommands(commands)
+	err := t.RunCommands(commands)
+	if err != nil {
+		return err
+	}
+	var sudo Sudo
+	if sudo.IsEnabled() {
+		for _, u := range users {
+			err := sudo.Configure(u.Name, u.Sudo)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	var doas Doas
+	if doas.IsEnabled() {
+		for _, u := range users {
+			err := doas.Configure(u.Name, u.Sudo)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (t *Runner) Run(c *cloudinit.Config) error {
