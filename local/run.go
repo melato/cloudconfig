@@ -13,7 +13,7 @@ import (
 )
 
 type Runner struct {
-	OS OS
+	OS cloudinit.OS
 }
 
 func (t *Runner) runCommandExec(args []string) error {
@@ -37,11 +37,11 @@ func (t *Runner) runCommandSh(script string) error {
 }
 
 func (t *Runner) runCommand(command cloudinit.Command) error {
-	script, isScript := cloudinit.Script(command)
+	script, isScript := cloudinit.CommandScript(command)
 	if isScript {
 		return t.runCommandSh(script)
 	}
-	args, isArgs := cloudinit.Args(command)
+	args, isArgs := cloudinit.CommandArgs(command)
 	if isArgs {
 		return t.runCommandExec(args)
 	}

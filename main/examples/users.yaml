@@ -1,3 +1,4 @@
+#cloud-config
 users:
   - name: foobar
     gecos: Foo B. Bar

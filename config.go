@@ -1,18 +1,17 @@
 package cloudinit
 
-import (
-	"fmt"
-
-	"melato.org/cloudinit/internal"
-)
+// Comment is the cloud-config comment that indicates that a .yaml file is a cloud-config file.
+const Comment = "#cloud-config"
 
 // Config sections are listed in the order in which they are run.
 type Config struct {
-	Bootcmd  []Command `yaml:"bootcmd,omitempty"`
-	Packages []string  `yaml:"packages,omitempty"`
-	Files    []*File   `yaml:"write_files,omitempty"`
-	Users    []*User   `yaml:"users,omitempty"`
-	Timezone string    `yaml:"timezone,omitempty"`
+	Bootcmd        []Command `yaml:"bootcmd,omitempty"`
+	PackageUpdate  bool      `yaml:"package_update",omitempty`
+	PackageUpgrade bool      `yaml:"package_upgrade",omitempty`
+	Packages       []string  `yaml:"packages,omitempty"`
+	Files          []*File   `yaml:"write_files,omitempty"`
+	Users          []*User   `yaml:"users,omitempty"`
+	Timezone       string    `yaml:"timezone,omitempty"`
 
 	// Runcmd is a list of commands to run
 	Runcmd []Command `yaml:"runcmd,omitempty"`
@@ -56,55 +55,4 @@ type User struct {
 	makes sense if only one of the above directories exists.
 	*/
 	Sudo any `yaml:"sudo,omitempty"`
-}
-
-// Merge Config b into Config c
-// Arrays are appended.  Packages are appended and duplicates are removed.
-// If a single value is non-empty in c, it stays as is.  Otherwise, it takes the value from b.
-func (c *Config) Merge(b *Config) {
-	c.Bootcmd = append(c.Bootcmd, b.Bootcmd...)
-	packageSet := make(internal.Set[string])
-	packages := make([]string, 0, len(c.Packages)+len(b.Packages))
-	for _, packageList := range [][]string{c.Packages, b.Packages} {
-		for _, pkg := range packageList {
-			if !packageSet.Contains(pkg) {
-				packageSet.Put(pkg)
-				packages = append(packages, pkg)
-			}
-		}
-	}
-	c.Packages = packages
-	c.Files = append(c.Files, b.Files...)
-	c.Users = append(c.Users, b.Users...)
-	if c.Timezone == "" {
-		c.Timezone = b.Timezone
-	}
-	c.Runcmd = append(c.Runcmd, b.Runcmd...)
-}
-
-// Script returns the command script content, if the command is a string.
-func Script(command Command) (string, bool) {
-	s, isString := command.(string)
-	return s, isString
-}
-
-// Args returns the command args, if the command is a slice.
-func Args(command Command) ([]string, bool) {
-	switch list := command.(type) {
-	case []string:
-		return list, true
-	case []any:
-		args := make([]string, len(list))
-		for i, arg := range list {
-			switch v := arg.(type) {
-			case string:
-				args[i] = v
-			default:
-				args[i] = fmt.Sprintf("%v", arg)
-			}
-		}
-		return args, true
-	default:
-		return nil, false
-	}
 }

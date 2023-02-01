@@ -1,9 +1,6 @@
-package local
+package cloudinit
 
-import (
-	"melato.org/cloudinit"
-)
-
+// OS - interface for handling OS-specific configuration
 type OS interface {
 	// InstallPackageCommand returns a command that installs a package.
 	// The command should be a single string that is passed as input to sh.
@@ -12,7 +9,7 @@ type OS interface {
 	// AddUserCommand returns a command that creates the user.
 	// The command should not configure sudo or ssh keys
 	// The command is executed with the equivalent of execve(3)
-	AddUserCommand(u *cloudinit.User) []string
+	AddUserCommand(u *User) []string
 
 	// NeedUserPasswords returns true if a new user should be
 	// assigned a password.

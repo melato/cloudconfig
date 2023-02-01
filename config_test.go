@@ -1,8 +1,13 @@
 package cloudinit
 
 import (
+	"io/fs"
+	"embed"
 	"testing"
 )
+
+//go:embed test/*.yaml
+var testFS embed.FS
 
 func stringSliceEquals(a, b []string) bool {
 	if len(a) != len(b) {
@@ -39,19 +44,23 @@ func TestConfigMerge2(t *testing.T) {
 
 func TestConfigCommandScript(t *testing.T) {
 	c := Command("echo")
-	s, isScript := Script(c)
+	s, isScript := CommandScript(c)
 	if !isScript || s != "echo" {
 		t.Fail()
 	}
 	c = Command([]string{"echo", "a"})
-	args, isArgs := Args(c)
+	args, isArgs := CommandArgs(c)
 	if !isArgs || !stringSliceEquals([]string{"echo", "a"}, args) {
 		t.Fail()
 	}
 
 	c = Command([]any{"echo", 1})
-	args, isArgs = Args(c)
+	args, isArgs = CommandArgs(c)
 	if !isArgs || !stringSliceEquals([]string{"echo", "1"}, args) {
 		t.Fail()
 	}
 }
+
+func TestHasCloudConfigComment(t *testing.T) {
+	data, err := fs.ReadFile("test/comment.yaml")
+	

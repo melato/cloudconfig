@@ -6,7 +6,7 @@ import (
 
 	"melato.org/cloudinit"
 	"melato.org/cloudinit/local"
-	"melato.org/cloudinit/local/os"
+	"melato.org/cloudinit/ostype"
 	"melato.org/command"
 	"melato.org/command/usage"
 	"melato.org/yaml"
@@ -22,7 +22,7 @@ type Run struct {
 	ConfigFile string `name:"f" usage:"cloud-config yaml file"`
 	OS         string
 	config     *cloudinit.Config
-	os         local.OS
+	os         cloudinit.OS
 }
 
 func (t *Run) Configured() error {
@@ -38,9 +38,9 @@ func (t *Run) Configured() error {
 	switch t.OS {
 	case "":
 	case "alpine":
-		t.os = &os.Alpine{}
+		t.os = &ostype.Alpine{}
 	case "debian":
-		t.os = &os.Debian{}
+		t.os = &ostype.Debian{}
 	default:
 		return fmt.Errorf("unrecognized OS.  accepted values are alpine, debian")
 	}

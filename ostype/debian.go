@@ -1,4 +1,4 @@
-package os
+package ostype
 
 import (
 	"melato.org/cloudinit"

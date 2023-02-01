@@ -1,3 +1,4 @@
+#cloud-config
 runcmd:
 - mkdir -p /tmp/commands
 - date > /tmp/commands/date
