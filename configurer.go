@@ -1,0 +1,285 @@
+package cloudinit
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	"melato.org/yaml"
+)
+
+var Trace bool
+
+type Configurer struct {
+	Base        BaseConfigurer
+	OS          OSType
+	Log         io.Writer
+	createdDirs map[string]struct{}
+}
+
+// NewConfigurer creates a Configurer
+func NewConfigurer(base BaseConfigurer) *Configurer {
+	t := &Configurer{Base: base}
+	t.createdDirs = make(map[string]struct{})
+	return t
+}
+
+func (t *Configurer) log(format string, args ...any) {
+	if t.Log != nil {
+		fmt.Fprintf(t.Log, format, args...)
+	}
+}
+
+func (t *Configurer) ensureDirExists(dir string) error {
+	if dir == "/" || dir == "." {
+		return nil
+	}
+	_, exists := t.createdDirs[dir]
+	if exists {
+		return nil
+	}
+	err := t.Base.RunCommand("mkdir", "-p", dir)
+	if err != nil {
+		return err
+	}
+	for d := dir; !(d == "." || d == "/"); d = filepath.Dir(d) {
+		t.createdDirs[d] = struct{}{}
+	}
+	return nil
+}
+
+func (t *Configurer) WriteFile(f *File) error {
+	var perm fs.FileMode
+	if f.Permissions != "" {
+		mode, err := strconv.ParseInt(f.Permissions, 8, 32)
+		if err != nil {
+			return err
+		}
+		perm = fs.FileMode(mode)
+	} else {
+		// does cloud-init specify default permissions?
+		perm = fs.FileMode(0644)
+	}
+	t.log("write file: %s\n", f.Path)
+	dir := filepath.Dir(f.Path)
+	err := t.ensureDirExists(dir)
+	if err != nil {
+		return err
+	}
+	err = t.Base.WriteFile(f.Path, []byte(f.Content), perm)
+	if err != nil {
+		return err
+	}
+	if f.Owner != "" {
+		err := t.Base.RunCommand("chown", f.Owner, f.Path)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *Configurer) Apply(config *Config) error {
+	if t.Base == nil {
+		return fmt.Errorf("missing base configurer")
+	}
+	err := t.InstallPackages(config.Packages)
+	if err != nil {
+		return err
+	}
+	for _, f := range config.Files {
+		err := t.WriteFile(f)
+		if err != nil {
+			return err
+		}
+	}
+	err = t.AddUsers(config.Users)
+	if err != nil {
+		return err
+	}
+	if config.Timezone != "" {
+		if t.OS == nil {
+			return requireOSError("cannot set timezone")
+		}
+		command := t.OS.SetTimezoneCommand(config.Timezone)
+		err := t.RunCommands([]Command{Command(command)})
+		if err != nil {
+			return err
+		}
+	}
+	err = t.RunCommands(config.Runcmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Configurer) ApplyConfigFiles(files ...string) error {
+	configs := make([]*Config, len(files))
+	for i, file := range files {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		if !HasComment(data) {
+			return fmt.Errorf("file %s does not start with %s", file, Comment)
+		}
+		var config Config
+		err = yaml.Unmarshal(data, &config)
+		if err != nil {
+			return fmt.Errorf("%s: %w", file, err)
+		}
+		configs[i] = &config
+	}
+	for i, config := range configs {
+		err := t.Apply(config)
+		if err != nil {
+			return fmt.Errorf("%s: %w", files[i], err)
+		}
+	}
+	return nil
+}
+
+func (t *Configurer) RunCommands(commands []Command) error {
+	for _, command := range commands {
+		err := t.runCommand(command)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *Configurer) runCommand(command Command) error {
+	script, isScript := CommandScript(command)
+	if isScript {
+		return t.Base.RunScript(script)
+	}
+	args, isArgs := CommandArgs(command)
+	if isArgs {
+		return t.Base.RunCommand(args...)
+	}
+	return fmt.Errorf("invalid command type: %T", command)
+}
+
+func (t *Configurer) InstallPackages(packages []string) error {
+	if len(packages) == 0 {
+		return nil
+	}
+	if t.OS == nil {
+		return requireOSError("cannot install packages")
+	}
+	commands := make([]Command, 0, len(packages))
+	for _, pkg := range packages {
+		commands = append(commands, t.OS.InstallPackageCommand(pkg))
+	}
+	return t.RunCommands(commands)
+}
+
+func requireOSError(msg string) error {
+	return fmt.Errorf("%s.  Missing OS", msg)
+}
+
+// ApplySudo default implementation
+// It supports sudo and doas.
+// It runs scripts that create files /etc/sudoers.d/{username} or /etc/doas.d/{username},
+// if these directories exist
+// This method is used only if BaseConfigurer does not implement ApplySudo
+func (t *Configurer) ApplySudo(username string, values []string) error {
+	commands := make([]Command, 0, 2)
+	commands = append(commands, sudoScript(username, values))
+	commands = append(commands, doasScript(username, values))
+	return t.RunCommands(commands)
+}
+
+func (t *Configurer) AddUsers(users []*User) error {
+	if len(users) == 0 {
+		return nil
+	}
+	if t.OS == nil {
+		return requireOSError("cannot create users")
+	}
+	commands := make([]Command, 0, len(users))
+	for _, u := range users {
+		commands = append(commands, t.OS.AddUserCommand(u))
+		groups := strings.Split(u.Groups, ",")
+		for _, group := range groups {
+			group = strings.TrimSpace(group)
+			if group != "" {
+				commands = append(commands, []string{"adduser", u.Name, group})
+			}
+		}
+	}
+	err := t.RunCommands(commands)
+	if err != nil {
+		return err
+	}
+
+	for _, u := range users {
+		if u.Sudo != nil && u.Sudo != false {
+			values, err := toStrings(u.Sudo)
+			if err != nil {
+				return fmt.Errorf("invalid sudo value for user %s: %w", u.Name, err)
+			}
+			applySudo, ok := t.Base.(BaseApplySudo)
+			if !ok {
+				applySudo = t
+			}
+			err = applySudo.ApplySudo(u.Name, values)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	for _, u := range users {
+		err := t.SetAuthorizedKeys(u)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// UserHomeDir default implementation
+// returns /home/{username} or /root for the root user
+func (t *Configurer) UserHomeDir(username string) (string, error) {
+	if username == "root" {
+		return "/root", nil
+	} else {
+		return filepath.Join("/home", username), nil
+	}
+}
+
+func (t *Configurer) SetAuthorizedKeys(u *User) error {
+	if len(u.SshAuthorizedKeys) == 0 {
+		return nil
+	}
+	var err error
+	homeDir := u.Homedir
+	if homeDir == "" {
+		impl, ok := t.Base.(BaseUserHomeDir)
+		if !ok {
+			impl = t
+		}
+		homeDir, err = impl.UserHomeDir(u.Name)
+		if err != nil {
+			return err
+		}
+	}
+	dir := filepath.Join(homeDir, ".ssh")
+	var buf bytes.Buffer
+	for _, key := range u.SshAuthorizedKeys {
+		fmt.Fprintf(&buf, "%s\n", key)
+	}
+	file := filepath.Join(dir, "authorized_keys")
+	err = t.Base.WriteFile(file, buf.Bytes(), os.FileMode(0600))
+	if err != nil {
+		return err
+	}
+	return t.Base.RunCommand("chmod", "0755", dir)
+}

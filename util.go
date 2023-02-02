@@ -1,25 +1,33 @@
 package cloudinit
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 
 	"melato.org/cloudinit/internal"
 )
 
-// FirstLine returns the first line in the data
-func FirstLine(data []byte) string {
-	scanner := bufio.NewScanner(bytes.NewReader(data))
-	if scanner.Scan() {
-		return scanner.Text()
+func FirstLineIs(data []byte, line string) bool {
+	n := len(line)
+	if len(data) < n {
+		return false
 	}
-	return ""
+	if len(data) > n {
+		c := rune(data[n])
+		if (c != '\r') && (c != '\n') {
+			return false
+		}
+	}
+	for i := 0; i < n; i++ {
+		if data[i] != line[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // HasComment returns true if the first line in the provided data is Comment.
 func HasComment(data []byte) bool {
-	return FirstLine(data) == Comment
+	return FirstLineIs(data, Comment)
 }
 
 // Script returns the command script content, if the command is a string.
@@ -71,4 +79,30 @@ func (c *Config) Merge(b *Config) {
 		c.Timezone = b.Timezone
 	}
 	c.Runcmd = append(c.Runcmd, b.Runcmd...)
+}
+
+func toStrings(a any) ([]string, error) {
+	switch v := a.(type) {
+	case bool:
+		if v {
+			return nil, nil
+		} else {
+			return nil, nil
+		}
+	case string:
+		return []string{v}, nil
+	case []string:
+		return v, nil
+	case []any:
+		list := make([]string, len(v))
+		for i, arg := range v {
+			s, isString := arg.(string)
+			if !isString {
+				break
+			}
+			list[i] = s
+		}
+		return list, nil
+	}
+	return nil, fmt.Errorf("cannot convert to string list: %v", a)
 }

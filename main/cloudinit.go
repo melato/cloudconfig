@@ -21,8 +21,7 @@ var usageData []byte
 type Run struct {
 	ConfigFile string `name:"f" usage:"cloud-config yaml file"`
 	OS         string
-	config     *cloudinit.Config
-	os         cloudinit.OS
+	os         cloudinit.OSType
 }
 
 func (t *Run) Configured() error {
@@ -34,7 +33,6 @@ func (t *Run) Configured() error {
 	if err != nil {
 		return err
 	}
-	t.config = config
 	switch t.OS {
 	case "":
 	case "alpine":
@@ -47,13 +45,19 @@ func (t *Run) Configured() error {
 	return nil
 }
 
-func (t *Run) Run() error {
-	runner := &local.Runner{OS: t.os}
-	return runner.Run(t.config)
+func (t *Run) Run(configFiles ...string) error {
+	configurer := cloudinit.NewConfigurer(&local.BaseConfigurer{})
+	configurer.OS = t.os
+	return configurer.ApplyConfigFiles(configFiles...)
 }
 
-func (t *Run) Print() error {
-	return yaml.Print(t.config)
+func (t *Run) Print(file string) error {
+	var config *cloudinit.Config
+	err := yaml.ReadFile(file, &config)
+	if err != nil {
+		return err
+	}
+	return yaml.Print(config)
 }
 
 func Parse(files []string) error {

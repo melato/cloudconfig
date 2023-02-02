@@ -1,8 +1,8 @@
 package cloudinit
 
 import (
-	"io/fs"
 	"embed"
+	"io/fs"
 	"testing"
 )
 
@@ -62,5 +62,15 @@ func TestConfigCommandScript(t *testing.T) {
 }
 
 func TestHasCloudConfigComment(t *testing.T) {
-	data, err := fs.ReadFile("test/comment.yaml")
-	
+	data, err := fs.ReadFile(testFS, "test/comment.yaml")
+	if err != nil {
+		t.Fatalf("read file: %v", err)
+	}
+	if !FirstLineIs(data, Comment) {
+		t.Fatalf("did not find comment")
+	}
+	data, err = fs.ReadFile(testFS, "test/no-comment.yaml")
+	if FirstLineIs(data, Comment) {
+		t.Fatalf("shoudl not have found comment")
+	}
+}

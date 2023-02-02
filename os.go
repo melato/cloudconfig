@@ -1,7 +1,7 @@
 package cloudinit
 
-// OS - interface for handling OS-specific configuration
-type OS interface {
+// OSType - interface for handling OS-specific configuration
+type OSType interface {
 	// InstallPackageCommand returns a command that installs a package.
 	// The command should be a single string that is passed as input to sh.
 	InstallPackageCommand(pkg string) string
