@@ -2,8 +2,6 @@ package cloudinit
 
 import (
 	"fmt"
-
-	"melato.org/cloudinit/internal"
 )
 
 func FirstLineIs(data []byte, line string) bool {
@@ -55,30 +53,6 @@ func CommandArgs(command Command) ([]string, bool) {
 	default:
 		return nil, false
 	}
-}
-
-// Merge Config b into Config c
-// Arrays are appended.  Packages are appended and duplicates are removed.
-// If a single value is non-empty in c, it stays as is.  Otherwise, it takes the value from b.
-func (c *Config) Merge(b *Config) {
-	c.Bootcmd = append(c.Bootcmd, b.Bootcmd...)
-	packageSet := make(internal.Set[string])
-	packages := make([]string, 0, len(c.Packages)+len(b.Packages))
-	for _, packageList := range [][]string{c.Packages, b.Packages} {
-		for _, pkg := range packageList {
-			if !packageSet.Contains(pkg) {
-				packageSet.Put(pkg)
-				packages = append(packages, pkg)
-			}
-		}
-	}
-	c.Packages = packages
-	c.Files = append(c.Files, b.Files...)
-	c.Users = append(c.Users, b.Users...)
-	if c.Timezone == "" {
-		c.Timezone = b.Timezone
-	}
-	c.Runcmd = append(c.Runcmd, b.Runcmd...)
 }
 
 func toStrings(a any) ([]string, error) {

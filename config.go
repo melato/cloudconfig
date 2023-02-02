@@ -5,13 +5,12 @@ const Comment = "#cloud-config"
 
 // Config sections are listed in the order in which they are run.
 type Config struct {
-	Bootcmd        []Command `yaml:"bootcmd,omitempty"`
-	PackageUpdate  bool      `yaml:"package_update",omitempty`
-	PackageUpgrade bool      `yaml:"package_upgrade",omitempty`
-	Packages       []string  `yaml:"packages,omitempty"`
-	Files          []*File   `yaml:"write_files,omitempty"`
-	Users          []*User   `yaml:"users,omitempty"`
-	Timezone       string    `yaml:"timezone,omitempty"`
+	//PackageUpdate  bool     `yaml:"package_update",omitempty`
+	//PackageUpgrade bool     `yaml:"package_upgrade",omitempty`
+	Packages []string `yaml:"packages,omitempty"`
+	Files    []*File  `yaml:"write_files,omitempty"`
+	Users    []*User  `yaml:"users,omitempty"`
+	Timezone string   `yaml:"timezone,omitempty"`
 
 	// Runcmd is a list of commands to run
 	Runcmd []Command `yaml:"runcmd,omitempty"`
