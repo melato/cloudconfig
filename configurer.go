@@ -71,7 +71,11 @@ func (t *Configurer) WriteFile(f *File) error {
 	if err != nil {
 		return err
 	}
-	err = t.Base.WriteFile(f.Path, []byte(f.Content), perm)
+	if f.Append {
+		err = t.Base.AppendFile(f.Path, []byte(f.Content), perm)
+	} else {
+		err = t.Base.WriteFile(f.Path, []byte(f.Content), perm)
+	}
 	if err != nil {
 		return err
 	}
@@ -79,6 +83,18 @@ func (t *Configurer) WriteFile(f *File) error {
 		err := t.Base.RunCommand("chown", f.Owner, f.Path)
 		if err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func (t *Configurer) WriteFiles(files []*File, defered bool) error {
+	for _, f := range files {
+		if f.Defer == defered {
+			err := t.WriteFile(f)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -92,11 +108,9 @@ func (t *Configurer) Apply(config *Config) error {
 	if err != nil {
 		return err
 	}
-	for _, f := range config.Files {
-		err := t.WriteFile(f)
-		if err != nil {
-			return err
-		}
+	err = t.WriteFiles(config.Files, false)
+	if err != nil {
+		return err
 	}
 	err = t.AddUsers(config.Users)
 	if err != nil {
@@ -111,6 +125,10 @@ func (t *Configurer) Apply(config *Config) error {
 		if err != nil {
 			return err
 		}
+	}
+	err = t.WriteFiles(config.Files, true)
+	if err != nil {
+		return err
 	}
 	err = t.RunCommands(config.Runcmd)
 	if err != nil {
@@ -158,10 +176,18 @@ func (t *Configurer) RunCommands(commands []Command) error {
 func (t *Configurer) runCommand(command Command) error {
 	script, isScript := CommandScript(command)
 	if isScript {
+		t.log("script << ---\n")
+		t.log("%s\n---\n", script)
 		return t.Base.RunScript(script)
 	}
 	args, isArgs := CommandArgs(command)
 	if isArgs {
+		if len(args) == 0 {
+			return fmt.Errorf("empty command")
+		}
+		if t.Log != nil {
+			t.log("%s\n", strings.Join(args, " "))
+		}
 		return t.Base.RunCommand(args...)
 	}
 	return fmt.Errorf("invalid command type: %T", command)
@@ -197,6 +223,17 @@ func (t *Configurer) ApplySudo(username string, values []string) error {
 	return t.RunCommands(commands)
 }
 
+func (t *Configurer) chpasswdScript(pass string, users []string) string {
+	var buf bytes.Buffer
+
+	fmt.Fprintf(&buf, "chpasswd -e << END\n")
+	for _, user := range users {
+		fmt.Fprintf(&buf, "%s:%s\n", user, pass)
+	}
+	fmt.Fprintf(&buf, "END\n")
+	return buf.String()
+}
+
 func (t *Configurer) AddUsers(users []*User) error {
 	if len(users) == 0 {
 		return nil
@@ -218,6 +255,18 @@ func (t *Configurer) AddUsers(users []*User) error {
 	err := t.RunCommands(commands)
 	if err != nil {
 		return err
+	}
+	if t.OS.NeedUserPasswords() {
+		names := make([]string, len(users))
+		for i, u := range users {
+			names[i] = u.Name
+		}
+
+		script := t.chpasswdScript("*", names)
+		err := t.Base.RunScript(script)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, u := range users {

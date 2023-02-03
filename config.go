@@ -28,6 +28,8 @@ type File struct {
 	Owner       string `yaml:"owner,omitempty`
 	Permissions string `yaml:"permissions,omitempty`
 	Content     string `yaml:"content`
+	Append      bool   `yaml:"append`
+	Defer       bool   `yaml:"defer`
 }
 
 type User struct {

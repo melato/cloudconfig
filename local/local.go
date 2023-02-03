@@ -70,8 +70,7 @@ func (t *BaseConfigurer) findUidGid(owner string) (uid int, gid int, err error) 
 	return parse(u.Uid, g.Gid)
 }
 
-func (t *BaseConfigurer) WriteFile(path string, data []byte, perm fs.FileMode) error {
-	path = filepath.Clean(path)
+func (t *BaseConfigurer) ensureDirExists(path string) error {
 	dir := filepath.Dir(path)
 	if dir != "." && dir != "/" {
 		err := os.MkdirAll(dir, fs.FileMode(0775))
@@ -79,7 +78,32 @@ func (t *BaseConfigurer) WriteFile(path string, data []byte, perm fs.FileMode) e
 			return err
 		}
 	}
+	return nil
+}
+
+func (t *BaseConfigurer) WriteFile(path string, data []byte, perm fs.FileMode) error {
+	err := t.ensureDirExists(path)
+	if err != nil {
+		return err
+	}
 	return os.WriteFile(path, data, perm)
+}
+
+func (t *BaseConfigurer) AppendFile(path string, data []byte, perm fs.FileMode) error {
+	err := t.ensureDirExists(path)
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, perm)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+	return f.Close()
 }
 
 // UserHomeDir default implementation

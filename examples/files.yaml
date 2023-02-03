@@ -2,6 +2,10 @@
 write_files:
 - path: /tmp/write_files/a.txt
   content: a
+- path: /tmp/write_files/a.txt
+  append: true
+  permissions: '0400'
+  content: b
 - path: /tmp/write_files/400
   permissions: '0400'
   content: permissions 0400

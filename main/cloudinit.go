@@ -19,20 +19,11 @@ var version string
 var usageData []byte
 
 type Run struct {
-	ConfigFile string `name:"f" usage:"cloud-config yaml file"`
-	OS         string
-	os         cloudinit.OSType
+	OS string
+	os cloudinit.OSType
 }
 
 func (t *Run) Configured() error {
-	if t.ConfigFile == "" {
-		return fmt.Errorf("missing config file")
-	}
-	var config *cloudinit.Config
-	err := yaml.ReadFile(t.ConfigFile, &config)
-	if err != nil {
-		return err
-	}
 	switch t.OS {
 	case "":
 	case "alpine":
@@ -45,7 +36,7 @@ func (t *Run) Configured() error {
 	return nil
 }
 
-func (t *Run) Run(configFiles ...string) error {
+func (t *Run) Apply(configFiles ...string) error {
 	configurer := cloudinit.NewConfigurer(&local.BaseConfigurer{})
 	configurer.OS = t.os
 	return configurer.ApplyConfigFiles(configFiles...)
@@ -76,7 +67,7 @@ func Parse(files []string) error {
 func main() {
 	cmd := &command.SimpleCommand{}
 	var app Run
-	cmd.Command("run").Flags(&app).RunFunc(app.Run)
+	cmd.Command("apply").Flags(&app).RunFunc(app.Apply)
 	cmd.Command("print").Flags(&app).RunFunc(app.Print)
 	cmd.Command("parse").RunFunc(Parse)
 	cmd.Command("version").RunFunc(func() { fmt.Println(version) })

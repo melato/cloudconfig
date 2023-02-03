@@ -13,6 +13,9 @@ type BaseConfigurer interface {
 
 	// WriteFile writes a file, like os.WriteFile.  It should not try to create any directories.
 	WriteFile(path string, data []byte, perm fs.FileMode) error
+
+	// AppendFile appends to a file.  It should not try to create any directories.
+	AppendFile(path string, data []byte, perm fs.FileMode) error
 }
 
 // Optional interface to return a user's home directory.
