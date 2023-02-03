@@ -330,5 +330,19 @@ func (t *Configurer) SetAuthorizedKeys(u *User) error {
 	if err != nil {
 		return err
 	}
-	return t.Base.RunCommand("chmod", "0755", dir)
+	owner := u.Name + ":" + u.Name
+	for _, command := range [][]string{
+		[]string{"chmod", "0755", dir},
+		[]string{"chown", owner, dir},
+		[]string{"chown", owner, file},
+	} {
+		if t.Log != nil {
+			t.log("%s\n", strings.Join(command, " "))
+		}
+		err := t.Base.RunCommand(command...)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
