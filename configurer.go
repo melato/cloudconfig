@@ -29,7 +29,7 @@ func NewConfigurer(base BaseConfigurer) *Configurer {
 	return t
 }
 
-func (t *Configurer) log(format string, args ...any) {
+func (t *Configurer) logf(format string, args ...any) {
 	if t.Log != nil {
 		fmt.Fprintf(t.Log, format, args...)
 	}
@@ -65,7 +65,7 @@ func (t *Configurer) WriteFile(f *File) error {
 		// does cloud-init specify default permissions?
 		perm = fs.FileMode(0644)
 	}
-	t.log("write file: %s\n", f.Path)
+	t.logf("write file: %s\n", f.Path)
 	dir := filepath.Dir(f.Path)
 	err := t.ensureDirExists(dir)
 	if err != nil {
@@ -176,8 +176,8 @@ func (t *Configurer) RunCommands(commands []Command) error {
 func (t *Configurer) runCommand(command Command) error {
 	script, isScript := CommandScript(command)
 	if isScript {
-		t.log("script << ---\n")
-		t.log("%s\n---\n", script)
+		t.logf("script << ---\n")
+		t.logf("%s\n---\n", script)
 		return t.Base.RunScript(script)
 	}
 	args, isArgs := CommandArgs(command)
@@ -186,7 +186,7 @@ func (t *Configurer) runCommand(command Command) error {
 			return fmt.Errorf("empty command")
 		}
 		if t.Log != nil {
-			t.log("%s\n", strings.Join(args, " "))
+			t.logf("%s\n", strings.Join(args, " "))
 		}
 		return t.Base.RunCommand(args...)
 	}
@@ -337,7 +337,7 @@ func (t *Configurer) SetAuthorizedKeys(u *User) error {
 		[]string{"chown", owner, file},
 	} {
 		if t.Log != nil {
-			t.log("%s\n", strings.Join(command, " "))
+			t.logf("%s\n", strings.Join(command, " "))
 		}
 		err := t.Base.RunCommand(command...)
 		if err != nil {
