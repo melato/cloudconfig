@@ -1,4 +1,4 @@
-package cloudinit
+package cloudconfig
 
 // Comment is the cloud-config comment that indicates that a .yaml file is a cloud-config file.
 const Comment = "#cloud-config"

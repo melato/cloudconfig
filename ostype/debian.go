@@ -1,7 +1,7 @@
 package ostype
 
 import (
-	"melato.org/cloudinit"
+	"melato.org/cloudconfig"
 )
 
 type Debian struct {
@@ -16,7 +16,7 @@ func (t *Debian) InstallPackageCommand(pkg string) string {
 	return "DEBIAN_FRONTEND=noninteractive apt-get -y install " + pkg
 }
 
-func (t *Debian) AddUserCommand(u *cloudinit.User) []string {
+func (t *Debian) AddUserCommand(u *cloudconfig.User) []string {
 	args := []string{"adduser", u.Name, "--disabled-password", "--gecos", u.Gecos}
 	if u.Uid != "" {
 		args = append(args, "--uid", u.Uid)

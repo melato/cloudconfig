@@ -3,10 +3,11 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"os"
 
-	"melato.org/cloudinit"
-	"melato.org/cloudinit/local"
-	"melato.org/cloudinit/ostype"
+	"melato.org/cloudconfig"
+	"melato.org/cloudconfig/local"
+	"melato.org/cloudconfig/ostype"
 	"melato.org/command"
 	"melato.org/command/usage"
 	"melato.org/yaml"
@@ -20,7 +21,7 @@ var usageData []byte
 
 type Run struct {
 	OS string
-	os cloudinit.OSType
+	os cloudconfig.OSType
 }
 
 func (t *Run) Configured() error {
@@ -37,13 +38,14 @@ func (t *Run) Configured() error {
 }
 
 func (t *Run) Apply(configFiles ...string) error {
-	configurer := cloudinit.NewConfigurer(&local.BaseConfigurer{})
+	configurer := cloudconfig.NewConfigurer(&local.BaseConfigurer{})
 	configurer.OS = t.os
+	configurer.Log = os.Stdout
 	return configurer.ApplyConfigFiles(configFiles...)
 }
 
 func (t *Run) Print(file string) error {
-	var config *cloudinit.Config
+	var config *cloudconfig.Config
 	err := yaml.ReadFile(file, &config)
 	if err != nil {
 		return err
@@ -53,7 +55,7 @@ func (t *Run) Print(file string) error {
 
 func Parse(files []string) error {
 	for _, file := range files {
-		var config *cloudinit.Config
+		var config *cloudconfig.Config
 		err := yaml.ReadFile(file, &config)
 		if err != nil {
 			fmt.Printf("%s ERROR\n", file)

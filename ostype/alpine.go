@@ -1,7 +1,7 @@
 package ostype
 
 import (
-	"melato.org/cloudinit"
+	"melato.org/cloudconfig"
 )
 
 type Alpine struct {
@@ -18,7 +18,7 @@ func (t *Alpine) InstallPackageCommand(pkg string) string {
 	return "apk add " + pkg
 }
 
-func (t *Alpine) AddUserCommand(u *cloudinit.User) []string {
+func (t *Alpine) AddUserCommand(u *cloudconfig.User) []string {
 	args := []string{"adduser", "-g", u.Gecos, "-D"}
 	if u.Uid != "" {
 		args = append(args, "-u", u.Uid)

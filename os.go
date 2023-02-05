@@ -1,4 +1,4 @@
-package cloudinit
+package cloudconfig
 
 // OSType - interface for handling OS-specific configuration
 type OSType interface {
