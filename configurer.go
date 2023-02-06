@@ -104,11 +104,12 @@ func (t *Configurer) Apply(config *Config) error {
 	if t.Base == nil {
 		return fmt.Errorf("missing base configurer")
 	}
-	err := t.InstallPackages(config.Packages)
+	var err error
+	err = t.WriteFiles(config.Files, false)
 	if err != nil {
 		return err
 	}
-	err = t.WriteFiles(config.Files, false)
+	err = t.InstallPackages(config.Packages)
 	if err != nil {
 		return err
 	}
