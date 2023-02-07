@@ -322,11 +322,18 @@ func (t *Configurer) SetAuthorizedKeys(u *User) error {
 		}
 	}
 	dir := filepath.Join(homeDir, ".ssh")
+	file := filepath.Join(dir, "authorized_keys")
+	exists, err := t.Base.FileExists(file)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
 	var buf bytes.Buffer
 	for _, key := range u.SshAuthorizedKeys {
 		fmt.Fprintf(&buf, "%s\n", key)
 	}
-	file := filepath.Join(dir, "authorized_keys")
 	err = t.Base.WriteFile(file, buf.Bytes(), os.FileMode(0600))
 	if err != nil {
 		return err

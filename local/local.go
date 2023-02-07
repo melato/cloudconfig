@@ -106,6 +106,17 @@ func (t *BaseConfigurer) AppendFile(path string, data []byte, perm fs.FileMode) 
 	return f.Close()
 }
 
+func (t *BaseConfigurer) FileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err != nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 // UserHomeDir default implementation
 // returns /home/{username} or /root for the root user
 func (t *BaseConfigurer) UserHomeDir(username string) (string, error) {
