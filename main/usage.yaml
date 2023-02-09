@@ -7,6 +7,16 @@ examples:
 commands:
   version:
     short: print version
-  run:
-    short: run the cloudinit configuration on the local system
-
+  apply:
+    use: "<file>..."
+    short: read cloud-config files and apply them
+    long: |
+      If a single file named "-" is provided, read from stdin.
+  parse:
+    short: read cloud-config files
+    long: |
+      use to verify that the syntax is correct
+  print:
+    short: parse and print a cloud-config file
+    long: |
+      only the fields that are understdood will be printed.

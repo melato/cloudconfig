@@ -138,6 +138,8 @@ func (t *Configurer) Apply(config *Config) error {
 	return nil
 }
 
+// ApplyConfigFiles reads cloud-config files and applies them.
+// It reads them all first before applying any of them.
 func (t *Configurer) ApplyConfigFiles(files ...string) error {
 	configs := make([]*Config, len(files))
 	for i, file := range files {
@@ -162,6 +164,25 @@ func (t *Configurer) ApplyConfigFiles(files ...string) error {
 		}
 	}
 	return nil
+}
+
+// Apply reads a cloud-config file from stdin and applies it
+func (t *Configurer) ApplyStdin() error {
+	var buf bytes.Buffer
+	_, err := io.Copy(&buf, os.Stdin)
+	if err != nil {
+		return fmt.Errorf("stdin: %w", err)
+	}
+	data := buf.Bytes()
+	if !HasComment(data) {
+		return fmt.Errorf("input does not start with %s", Comment)
+	}
+	var config Config
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		return err
+	}
+	return t.Apply(&config)
 }
 
 func (t *Configurer) RunCommands(commands []Command) error {

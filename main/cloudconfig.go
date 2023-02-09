@@ -41,7 +41,11 @@ func (t *Run) Apply(configFiles ...string) error {
 	configurer := cloudconfig.NewConfigurer(&local.BaseConfigurer{})
 	configurer.OS = t.os
 	configurer.Log = os.Stdout
-	return configurer.ApplyConfigFiles(configFiles...)
+	if len(configFiles) == 1 && configFiles[0] == "-" {
+		return configurer.ApplyStdin()
+	} else {
+		return configurer.ApplyConfigFiles(configFiles...)
+	}
 }
 
 func (t *Run) Print(file string) error {
