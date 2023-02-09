@@ -2,6 +2,9 @@ package cloudconfig
 
 import (
 	"fmt"
+	"os"
+
+	"melato.org/yaml"
 )
 
 func FirstLineIs(data []byte, line string) bool {
@@ -79,4 +82,28 @@ func toStrings(a any) ([]string, error) {
 		return list, nil
 	}
 	return nil, fmt.Errorf("cannot convert to string list: %v", a)
+}
+
+func ReadConfigFile(file string) (*Config, error) {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	config, err := ParseConfig(data)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", file, err)
+	}
+	return config, nil
+}
+
+func ParseConfig(data []byte) (*Config, error) {
+	if !HasComment(data) {
+		return nil, fmt.Errorf("does not start with %s", Comment)
+	}
+	var config Config
+	err := yaml.Unmarshal(data, &config)
+	if err != nil {
+		return nil, err
+	}
+	return &config, nil
 }

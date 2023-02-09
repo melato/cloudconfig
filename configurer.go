@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"melato.org/yaml"
 )
 
 var Trace bool
@@ -143,19 +141,11 @@ func (t *Configurer) Apply(config *Config) error {
 func (t *Configurer) ApplyConfigFiles(files ...string) error {
 	configs := make([]*Config, len(files))
 	for i, file := range files {
-		data, err := os.ReadFile(file)
+		config, err := ReadConfigFile(file)
 		if err != nil {
 			return err
 		}
-		if !HasComment(data) {
-			return fmt.Errorf("file %s does not start with %s", file, Comment)
-		}
-		var config Config
-		err = yaml.Unmarshal(data, &config)
-		if err != nil {
-			return fmt.Errorf("%s: %w", file, err)
-		}
-		configs[i] = &config
+		configs[i] = config
 	}
 	for i, config := range configs {
 		err := t.Apply(config)
@@ -174,15 +164,11 @@ func (t *Configurer) ApplyStdin() error {
 		return fmt.Errorf("stdin: %w", err)
 	}
 	data := buf.Bytes()
-	if !HasComment(data) {
-		return fmt.Errorf("input does not start with %s", Comment)
-	}
-	var config Config
-	err = yaml.Unmarshal(data, &config)
+	config, err := ParseConfig(data)
 	if err != nil {
 		return err
 	}
-	return t.Apply(&config)
+	return t.Apply(config)
 }
 
 func (t *Configurer) RunCommands(commands []Command) error {
