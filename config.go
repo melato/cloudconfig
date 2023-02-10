@@ -13,15 +13,16 @@ type Config struct {
 	Timezone string   `yaml:"timezone,omitempty"`
 
 	// Runcmd is a list of commands to run
-	Runcmd []Command `yaml:"runcmd,omitempty"`
+	Runcmd Commands `yaml:"runcmd,omitempty"`
 }
 
-// Command is string, or []string or []any
+// Commands is a list of commands.
+// Each command is a string, or []string or []any
 // If it is a []string, it is executed using the equivalent of
 // execve(3) (with the first arg as the command)
 // If it is a []any, it is converted to []string and used as above.
 // If it is a string, it is passed as input to /bin/sh
-type Command any
+type Commands []any
 
 type File struct {
 	Path        string `yaml:"path`

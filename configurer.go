@@ -120,7 +120,7 @@ func (t *Configurer) Apply(config *Config) error {
 			return requireOSError("cannot set timezone")
 		}
 		command := t.OS.SetTimezoneCommand(config.Timezone)
-		err := t.RunCommands([]Command{Command(command)})
+		err := t.RunCommands(Commands{command})
 		if err != nil {
 			return err
 		}
@@ -171,7 +171,7 @@ func (t *Configurer) ApplyStdin() error {
 	return t.Apply(config)
 }
 
-func (t *Configurer) RunCommands(commands []Command) error {
+func (t *Configurer) RunCommands(commands Commands) error {
 	for _, command := range commands {
 		err := t.runCommand(command)
 		if err != nil {
@@ -181,7 +181,7 @@ func (t *Configurer) RunCommands(commands []Command) error {
 	return nil
 }
 
-func (t *Configurer) runCommand(command Command) error {
+func (t *Configurer) runCommand(command any) error {
 	script, isScript := CommandScript(command)
 	if isScript {
 		t.logf("script << ---\n")
@@ -208,7 +208,7 @@ func (t *Configurer) InstallPackages(packages []string) error {
 	if t.OS == nil {
 		return requireOSError("cannot install packages")
 	}
-	commands := make([]Command, 0, len(packages))
+	commands := make(Commands, 0, len(packages))
 	for _, pkg := range packages {
 		commands = append(commands, t.OS.InstallPackageCommand(pkg))
 	}
@@ -225,7 +225,7 @@ func requireOSError(msg string) error {
 // if these directories exist
 // This method is used only if BaseConfigurer does not implement ApplySudo
 func (t *Configurer) ApplySudo(username string, values []string) error {
-	commands := make([]Command, 0, 2)
+	commands := make(Commands, 0, 2)
 	commands = append(commands, sudoScript(username, values))
 	commands = append(commands, doasScript(username, values))
 	return t.RunCommands(commands)
@@ -249,7 +249,7 @@ func (t *Configurer) AddUsers(users []*User) error {
 	if t.OS == nil {
 		return requireOSError("cannot create users")
 	}
-	commands := make([]Command, 0, len(users))
+	commands := make(Commands, 0, len(users))
 	for _, u := range users {
 		commands = append(commands, t.OS.AddUserCommand(u))
 		groups := strings.Split(u.Groups, ",")

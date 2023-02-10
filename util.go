@@ -32,13 +32,13 @@ func HasComment(data []byte) bool {
 }
 
 // Script returns the command script content, if the command is a string.
-func CommandScript(command Command) (string, bool) {
+func CommandScript(command any) (string, bool) {
 	s, isString := command.(string)
 	return s, isString
 }
 
 // Args returns the command args, if the command is a slice.
-func CommandArgs(command Command) ([]string, bool) {
+func CommandArgs(command any) ([]string, bool) {
 	switch list := command.(type) {
 	case []string:
 		return list, true
