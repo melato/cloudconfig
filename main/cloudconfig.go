@@ -10,7 +10,6 @@ import (
 	"melato.org/cloudconfig/ostype"
 	"melato.org/command"
 	"melato.org/command/usage"
-	"melato.org/yaml"
 )
 
 //go:embed version
@@ -49,18 +48,21 @@ func (t *Run) Apply(configFiles ...string) error {
 }
 
 func (t *Run) Print(file string) error {
-	var config *cloudconfig.Config
-	err := yaml.ReadFile(file, &config)
+	config, err := cloudconfig.ReadFile(file)
 	if err != nil {
 		return err
 	}
-	return yaml.Print(config)
+	data, err := cloudconfig.Marshal(config)
+	if err != nil {
+		return err
+	}
+	os.Stdout.Write(data)
+	return nil
 }
 
 func Parse(files []string) error {
 	for _, file := range files {
-		var config *cloudconfig.Config
-		err := yaml.ReadFile(file, &config)
+		_, err := cloudconfig.ReadFile(file)
 		if err != nil {
 			fmt.Printf("%s ERROR\n", file)
 			return err

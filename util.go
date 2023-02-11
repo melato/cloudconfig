@@ -1,10 +1,11 @@
 package cloudconfig
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
-	"melato.org/yaml"
+	"gopkg.in/yaml.v2"
 )
 
 func FirstLineIs(data []byte, line string) bool {
@@ -84,19 +85,19 @@ func toStrings(a any) ([]string, error) {
 	return nil, fmt.Errorf("cannot convert to string list: %v", a)
 }
 
-func ReadConfigFile(file string) (*Config, error) {
+func ReadFile(file string) (*Config, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
-	config, err := ParseConfig(data)
+	config, err := Unmarshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", file, err)
 	}
 	return config, nil
 }
 
-func ParseConfig(data []byte) (*Config, error) {
+func Unmarshal(data []byte) (*Config, error) {
 	if !HasComment(data) {
 		return nil, fmt.Errorf("does not start with %s", Comment)
 	}
@@ -106,4 +107,15 @@ func ParseConfig(data []byte) (*Config, error) {
 		return nil, err
 	}
 	return &config, nil
+}
+
+func Marshal(config *Config) ([]byte, error) {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "%s\n", Comment)
+	encoder := yaml.NewEncoder(&buf)
+	err := encoder.Encode(config)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

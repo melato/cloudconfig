@@ -141,7 +141,7 @@ func (t *Configurer) Apply(config *Config) error {
 func (t *Configurer) ApplyConfigFiles(files ...string) error {
 	configs := make([]*Config, len(files))
 	for i, file := range files {
-		config, err := ReadConfigFile(file)
+		config, err := ReadFile(file)
 		if err != nil {
 			return err
 		}
@@ -164,7 +164,7 @@ func (t *Configurer) ApplyStdin() error {
 		return fmt.Errorf("stdin: %w", err)
 	}
 	data := buf.Bytes()
-	config, err := ParseConfig(data)
+	config, err := Unmarshal(data)
 	if err != nil {
 		return err
 	}
