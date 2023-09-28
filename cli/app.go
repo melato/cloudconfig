@@ -39,7 +39,7 @@ func (t *App) Apply(configFiles ...string) error {
 	}
 }
 
-func (t *App) Print(file string) error {
+func Print(file string) error {
 	config, err := cloudconfig.ReadFile(file)
 	if err != nil {
 		return err
@@ -60,6 +60,19 @@ func Parse(files []string) error {
 			return err
 		}
 		fmt.Printf("%s OK\n", file)
+	}
+	return nil
+}
+
+func Packages(files []string) error {
+	for _, file := range files {
+		c, err := cloudconfig.ReadFile(file)
+		if err != nil {
+			return fmt.Errorf("%s %e\n", file, err)
+		}
+		for _, p := range c.Packages {
+			fmt.Printf("%s\n", p)
+		}
 	}
 	return nil
 }

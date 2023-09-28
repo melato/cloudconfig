@@ -1,6 +1,6 @@
-short: runs cloudinit configurations on the local system
+short: process cloud-init files
 long: |
-  Intended to be used for testing cloud-init files.
+  Intended for testing.
 examples:
 - version
 - -f config.yaml -o alpine run 
@@ -20,3 +20,7 @@ commands:
     short: parse and print a cloud-config file
     long: |
       only the fields that are understdood will be printed.
+  packages:
+    use: "<file>..."
+    short: list packages
+  
