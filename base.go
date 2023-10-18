@@ -1,10 +1,13 @@
 package cloudconfig
 
 import (
+	"io"
 	"io/fs"
 )
 
 type BaseConfigurer interface {
+	SetLogWriter(io.Writer)
+
 	// RunScript runs sh with the given input
 	RunScript(input string) error
 
