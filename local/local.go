@@ -2,6 +2,7 @@ package local
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -12,25 +13,31 @@ import (
 )
 
 type BaseConfigurer struct {
+	Log io.Writer
+}
+
+func (t *BaseConfigurer) SetLogWriter(w io.Writer) {
+	t.Log = w
 }
 
 func (t *BaseConfigurer) RunCommand(args ...string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("command has 0 args")
 	}
+	fmt.Printf("log\n: %x\n", t.Log)
 	cmd := exec.Command(args[0], args[1:]...)
 	fmt.Printf("%s\n", cmd.String())
 	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = t.Log
+	cmd.Stderr = t.Log
 	return cmd.Run()
 }
 
 func (t *BaseConfigurer) RunScript(script string) error {
 	cmd := exec.Command("/bin/sh")
 	cmd.Stdin = strings.NewReader(script)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = t.Log
+	cmd.Stderr = t.Log
 	return cmd.Run()
 }
 

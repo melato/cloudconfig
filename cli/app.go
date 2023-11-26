@@ -29,7 +29,9 @@ func (t *App) Configured() error {
 }
 
 func (t *App) Apply(configFiles ...string) error {
-	configurer := cloudconfig.NewConfigurer(&local.BaseConfigurer{})
+	base := &local.BaseConfigurer{}
+	base.SetLogWriter(os.Stdout)
+	configurer := cloudconfig.NewConfigurer(base)
 	configurer.OS = t.os
 	configurer.Log = os.Stdout
 	if len(configFiles) == 1 && configFiles[0] == "-" {
