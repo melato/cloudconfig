@@ -3,6 +3,8 @@ cloudconfig - provides Go structures and interfaces for reading and applying
 
 # Supported cloud-init features
 The following cloud-init modules (sections) are supported and applied in this order:
+- package_update
+- package_upgrade
 - packages
 - write_files
 - users

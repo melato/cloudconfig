@@ -14,6 +14,10 @@ type Alpine struct {
 // Since we keep the account enabled, we require it to have a password.
 func (t *Alpine) NeedUserPasswords() bool { return true }
 
+func (t *Alpine) UpdatePackagesCommand() string { return "apk update" }
+
+func (t *Alpine) UpgradePackagesCommand() string { return "apk upgrade" }
+
 func (t *Alpine) InstallPackageCommand(pkg string) string {
 	return "apk add " + pkg
 }

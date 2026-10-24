@@ -2,6 +2,18 @@ package cloudconfig
 
 // OSType - interface for handling OS-specific configuration
 type OSType interface {
+	// UpdatePackagesCommand returns a command that updates the package index.
+	// It is used for package_update.
+	// The command should be a single string that is passed as input to sh.
+	// It should return "" if the OS does not support it.
+	UpdatePackagesCommand() string
+
+	// UpgradePackagesCommand returns a command that upgrades the installed packages.
+	// It is used for package_upgrade.
+	// The command should be a single string that is passed as input to sh.
+	// It should return "" if the OS does not support it.
+	UpgradePackagesCommand() string
+
 	// InstallPackageCommand returns a command that installs a package.
 	// The command should be a single string that is passed as input to sh.
 	InstallPackageCommand(pkg string) string

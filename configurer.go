@@ -107,6 +107,10 @@ func (t *Configurer) Apply(config *Config) error {
 	if err != nil {
 		return err
 	}
+	err = t.UpdatePackages(config.PackageUpdate, config.PackageUpgrade)
+	if err != nil {
+		return err
+	}
 	err = t.InstallPackages(config.Packages)
 	if err != nil {
 		return err
@@ -199,6 +203,33 @@ func (t *Configurer) runCommand(command any) error {
 		return t.Base.RunCommand(args...)
 	}
 	return fmt.Errorf("invalid command type: %T", command)
+}
+
+// UpdatePackages updates the package index (update) and upgrades the installed packages (upgrade),
+// in this order.
+func (t *Configurer) UpdatePackages(update, upgrade bool) error {
+	if !update && !upgrade {
+		return nil
+	}
+	if t.OS == nil {
+		return requireOSError("cannot update packages")
+	}
+	var commands Commands
+	if update {
+		command := t.OS.UpdatePackagesCommand()
+		if command == "" {
+			return fmt.Errorf("package_update is not supported by this OS")
+		}
+		commands = append(commands, command)
+	}
+	if upgrade {
+		command := t.OS.UpgradePackagesCommand()
+		if command == "" {
+			return fmt.Errorf("package_upgrade is not supported by this OS")
+		}
+		commands = append(commands, command)
+	}
+	return t.RunCommands(commands)
 }
 
 func (t *Configurer) InstallPackages(packages []string) error {

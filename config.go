@@ -5,12 +5,14 @@ const Comment = "#cloud-config"
 
 // Config sections are listed in the order in which they are run.
 type Config struct {
-	//PackageUpdate  bool     `yaml:"package_update",omitempty`
-	//PackageUpgrade bool     `yaml:"package_upgrade",omitempty`
-	Packages []string `yaml:"packages,omitempty"`
-	Files    []*File  `yaml:"write_files,omitempty"`
-	Users    []*User  `yaml:"users,omitempty"`
-	Timezone string   `yaml:"timezone,omitempty"`
+	// PackageUpdate updates the package index (package_update).  The default is false.
+	PackageUpdate bool `yaml:"package_update,omitempty"`
+	// PackageUpgrade upgrades the installed packages (package_upgrade).  The default is false.
+	PackageUpgrade bool     `yaml:"package_upgrade,omitempty"`
+	Packages       []string `yaml:"packages,omitempty"`
+	Files          []*File  `yaml:"write_files,omitempty"`
+	Users          []*User  `yaml:"users,omitempty"`
+	Timezone       string   `yaml:"timezone,omitempty"`
 
 	// Runcmd is a list of commands to run
 	Runcmd Commands `yaml:"runcmd,omitempty"`
@@ -25,12 +27,12 @@ type Config struct {
 type Commands []any
 
 type File struct {
-	Path        string `yaml:"path`
-	Owner       string `yaml:"owner,omitempty`
-	Permissions string `yaml:"permissions,omitempty`
-	Content     string `yaml:"content`
-	Append      bool   `yaml:"append`
-	Defer       bool   `yaml:"defer`
+	Path        string `yaml:"path"`
+	Owner       string `yaml:"owner,omitempty"`
+	Permissions string `yaml:"permissions,omitempty"`
+	Content     string `yaml:"content"`
+	Append      bool   `yaml:"append"`
+	Defer       bool   `yaml:"defer"`
 }
 
 type User struct {

@@ -12,6 +12,15 @@ type Debian struct {
 // for passwordless ssh login.
 func (t *Debian) NeedUserPasswords() bool { return false }
 
+func (t *Debian) UpdatePackagesCommand() string {
+	return "DEBIAN_FRONTEND=noninteractive apt-get update"
+}
+
+// UpgradePackagesCommand uses dist-upgrade, like cloud-init, and keeps existing config files.
+func (t *Debian) UpgradePackagesCommand() string {
+	return "DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::=--force-confold dist-upgrade"
+}
+
 func (t *Debian) InstallPackageCommand(pkg string) string {
 	return "DEBIAN_FRONTEND=noninteractive apt-get -y install " + pkg
 }
