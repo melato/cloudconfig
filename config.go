@@ -32,6 +32,7 @@ type File struct {
 	Permissions string `yaml:"permissions,omitempty"`
 	Content     string `yaml:"content"`
 	Append      bool   `yaml:"append"`
+    // If Defer is true, the file is created after users, before runcmd
 	Defer       bool   `yaml:"defer"`
 }
 

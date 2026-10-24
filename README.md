@@ -9,7 +9,7 @@ The following cloud-init modules (sections) are supported and applied in this or
 - write_files
 - users
 - runcmd
-- write_files with defer: true
+- write_files (defer: true)
 
 The files are in YAML format and their first line must be "#cloud-config".
 
